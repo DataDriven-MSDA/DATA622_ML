@@ -1,0 +1,289 @@
+---
+title: "KumudiniBhave_622_HW1Q3"
+author: "Kumudini Bhave"
+date: "May 5, 2020"
+output:
+  html_document:
+    fontsize: 35pt
+    highlight: pygments
+    theme: cerulean
+    toc: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+---
+
+
+
+
+*******
+
+# **Machine Learning  : K Nearest Neighbour ( KNN )**
+
+********
+
+### Summary
+
+
+This is an R Markdown document for performing KNN Classification on the ICU data.
+
+
+     
+```{r warning=FALSE, comment=FALSE, message=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=150)}
+knitr::opts_chunk$set(message = FALSE, echo=TRUE)
+
+# To load survey data from googlesheets
+suppressWarnings(suppressMessages(library(googlesheets)))
+# Library for loading CSV data
+library(RCurl)
+# Library for data tidying
+library(tidyr)
+# Library for data structure operations 
+library(dplyr)
+library(knitr)
+# Library for plotting
+library(ggplot2)
+# Library for data display in tabular format
+library(DT)
+library(pander)
+
+suppressWarnings(suppressMessages(library(recommenderlab)))
+
+```
+
+
+
+### Helper Functions
+
+We derive the functions to 
+a) find eucledian distance between two data points
+b) predict the test data
+c) calculate the accuracy of the model
+
+```{r  warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80),echo=TRUE}
+
+
+######################################################
+
+## Function to calculate the Euclidian distance
+
+#####################################################
+
+euclideanDist <- function(a, b){
+  d = 0
+  for(i in c(1:(length(a)) ))
+  {
+    d = d + (a[[i]]-b[[i]])^2
+  }
+  d = sqrt(d)
+  return(d)
+}
+
+```
+
+```{r  warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80),echo=TRUE}
+
+
+######################################################
+
+## Function to calculate the knn predictions
+
+#####################################################
+
+
+knn_predict2 <- function(test_data, train_data, k_value, labelcol){
+  pred <- c()  #empty pred vector 
+  #LOOP-1
+  for(i in c(1:nrow(test_data))){   #looping over each record of test data
+    eu_dist =c()          #eu_dist & eu_char empty  vector
+    eu_char = c()
+    good = 0              #good & bad variable initialization with 0 value
+    bad = 0
+    
+    #LOOP-2-looping over train data 
+    for(j in c(1:nrow(train_data))){
+ 
+      #adding euclidean distance b/w test data point and train data to eu_dist vector
+      eu_dist <- c(eu_dist, euclideanDist(test_data[i,-c(labelcol)], train_data[j,-c(labelcol)]))
+ 
+      #adding class variable of training data in eu_char
+      eu_char <- c(eu_char, as.character(train_data[j,][[labelcol]]))
+    }
+    
+    eu <- data.frame(eu_char, eu_dist) #eu dataframe created with eu_char & eu_dist columns
+ 
+    eu <- eu[order(eu$eu_dist),]       #sorting eu dataframe to gettop K neighbors
+    eu <- eu[1:k_value,]               #eu dataframe with top K neighbors
+ 
+    tbl.sm.df<-table(eu$eu_char)
+    cl_label<-  names(tbl.sm.df)[[as.integer(which.max(tbl.sm.df))]]
+    
+    pred <- c(pred, cl_label)
+    }
+    return(pred) #return pred vector
+  }
+  
+
+```
+
+
+```{r  warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80),echo=TRUE}
+
+
+######################################################
+
+## Function to calculate the accuracy of the model
+ 
+####################################################
+
+
+
+accuracy <- function(test_data,labelcol,predcol){
+  correct = 0
+  for(i in c(1:nrow(test_data))){
+    if(test_data[i,labelcol] == test_data[i,predcol]){ 
+      correct = correct+1
+    }
+  }
+  accu = (correct/nrow(test_data)) * 100  
+  return(accu)
+}
+
+```
+
+
+### Data Loading & Preparation
+
+
+
+```{r  warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80),echo=TRUE}
+
+#load data
+# Getting data 
+
+icu.giturl <- "https://raw.githubusercontent.com/DataDriven-MSDA/DATA622_ML/master/Homework1/icu.csv"
+icudataorig <- read.csv(url(icu.giturl), header = TRUE)
+
+
+
+nrow(icudataorig)
+ncol(icudataorig)
+
+pander(head(icudataorig), caption = "Sample ICU data")
+
+
+
+knn.df <- icudataorig
+labelcol <-5
+
+
+# Adding variable COMA to the existing df
+
+knn.df$COMA <- ifelse(knn.df$LOC==2, 1, 0)
+
+
+```
+
+
+```{r  warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80),echo=TRUE}
+
+# Focussing on a set pf predictors for classification
+
+#The formula to fit is "STA ~ TYP + COMA + AGE + INF"
+knn.df <- knn.df %>% dplyr::select(c(TYP, COMA, AGE, INF, STA))
+
+pander(summary(knn.df), caption="short icu data summary ")
+
+
+predictioncol<-labelcol + 1
+
+
+# Dividing the data into ttrain and test for modeling
+# We divide in a 70 train 30 test ratio
+
+set.seed(2)
+n<-nrow(knn.df)
+knn.df<- knn.df[sample(n),]
+
+train.df <- knn.df[1:as.integer(0.7*n),]
+table(train.df[,labelcol])
+
+test.df <- knn.df[as.integer(0.7*n +1):n,]
+testknn <- test.df
+table(test.df[,labelcol])
+
+
+# Lets run the knn model for different values of K where K is number of neighbors to determine the class
+K = c(3,5,7,15,25,50) # number of neighbors to determine the class
+
+
+```
+
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+
+```
+
+
+
+### Model : kNN for different values of K
+
+
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+# declaring a column for prediction
+
+
+# KNN Accuracy table
+knnaccuracy <- data.frame(matrix(nrow = 0, ncol = 2))
+
+for(k in K){ 
+  print(k)
+  predictions <- knn_predict2(testknn, train.df, k,labelcol) #calling knn_predict()
+
+  test.df[,predictioncol] <- predictions #Adding predictions in test data as 7th column
+  acc <- accuracy(test.df,labelcol,predictioncol)
+
+  knnaccuracy <-  rbind(knnaccuracy, c(k, acc))
+
+  
+  print(paste('The accuracy for k = ',k ))
+  print(acc)
+  
+  print(paste0('The confusion matrix for k = ', k))
+  print(table(test.df[[predictioncol]],test.df[[labelcol]]))
+  
+}
+colnames(knnaccuracy) <- c("K_value", "Accuracy")
+pander(knnaccuracy, caption="Accuracy Table for kNN ")
+
+```
+
+
+\newpage 
+
+
+###  Accuracy Plot
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=150)}
+
+ggplot(knnaccuracy, aes(x = K_value, y = Accuracy) ) + geom_point(show_legend = TRUE) +  geom_line( colour = "red")
+
+```
+
+\newpage 
+
+###  Conclusions
+
+We find that Age is a continuous predictor, while Typ, Inf, Coma are discrete variables . Overall the data doesnt seem imbalanced.
+The kNN models derived for different values of kNN, show that the accuracy for higher values of k voz, 25 , 50 show greater accuracy, although there is not very large dfference for lower values of k.
+
+However , other models apart from kNN could be derived and compared to assert the accuracy levels 
+
+
+\newpage 
+
+

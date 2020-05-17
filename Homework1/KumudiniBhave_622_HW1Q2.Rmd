@@ -1,0 +1,220 @@
+---
+title: "KumudiniBhave_622_HW1Q2"
+author: "Kumudini Bhave"
+date: "May 1, 2020"
+output:
+  html_document:
+    fontsize: 35pt
+    highlight: pygments
+    theme: cerulean
+    toc: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+---
+
+
+
+     
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+````
+
+
+
+
+*******
+
+# **Machine Learning  : Exploratory Data Analysis**
+
+********
+
+### Summary
+
+
+This is an R Markdown document for performing Exploratory Data Analysis of the provided data.
+
+
+
+
+```{r warning=FALSE, comment=FALSE, message=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=150)}
+knitr::opts_chunk$set(message = FALSE, echo=TRUE)
+
+# Library for loading CSV data
+library(RCurl)
+# Library for data tidying
+library(tidyr)
+# Library for data structure operations 
+library(dplyr)
+library(knitr)
+# Library for plotting
+library(ggplot2)
+# Library for data display in tabular format
+library(DT)
+library(pander)
+library(reshape2)
+library(Amelia)
+library(gridExtra)
+
+suppressWarnings(suppressMessages(library(recommenderlab)))
+
+
+```
+
+
+
+
+
+### Data Loading & Preparation
+
+
+
+```{r  warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80),echo=TRUE}
+
+# Getting data 
+
+junk1.giturl <- "https://raw.githubusercontent.com/DataDriven-MSDA/DATA622_ML/master/Homework1/junk1.txt"
+
+junk2.giturl <- "https://raw.githubusercontent.com/DataDriven-MSDA/DATA622_ML/master/Homework1/junk2.csv"
+
+
+junk1dataorig <- read.table(junk1.giturl, header=TRUE,  sep=" ")
+junk2dataorig <- read.csv(url(junk2.giturl))
+
+
+nrow(junk1dataorig)
+ncol(junk1dataorig)
+
+
+nrow(junk2dataorig)
+ncol(junk2dataorig)
+
+
+
+```
+
+
+
+
+\newpage 
+
+
+### Data Exploration
+
+
+We find primarily 3 similar columns in both the files . 
+Column a and column b seem to be the predictor variables and column class seems to be the response variable.
+
+Below is the summary of the predictor variables and the response variable "CLASS" in the dataset.
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+pander(table(junk1dataorig$class), caption = "Response Variable : class")
+pander(table(junk1dataorig$class)/sum(table(junk1dataorig$class)), caption = "Frequency Table : class")
+
+pander(summary(junk1dataorig))
+
+pander(table(junk2dataorig$class), caption = "Response Variable : class")
+pander(table(junk2dataorig$class)/sum(table(junk2dataorig$class)), caption = "Frequency Table : class")
+
+pander(summary(junk2dataorig))
+
+
+```
+
+
+We observe that both the data files contain data which is similar and hence seem to be divided into two separate files , as it might be sourced form two different input sources.
+
+We could combine this to form a single source.
+Hence appending the rows of junk2 data file to junk1 data file.
+
+
+
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+junkdatacombo <- rbind(junk1dataorig, junk2dataorig)
+
+
+nrow(junkdatacombo)
+ncol(junkdatacombo)
+
+
+pander(summary(junkdatacombo))
+
+
+```
+
+We observe that the class is a factor variable of ordinal type and hence we could convert this column into factor
+
+
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+junkdatacombo$class <- as.factor(junkdatacombo$class)
+pander(summary(junkdatacombo))
+
+
+
+```
+
+Checking for missing data we fine that we have 100% complete cases.
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=150)}
+
+missmap(junkdatacombo, legend = TRUE, main = "Missing Values vs Observed", col =  c("red", "black"))
+
+```
+
+###  Plots For Predictors
+
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=150)}
+
+# Continuous Predictor Distributions
+
+
+
+ahist <- ggplot(junkdatacombo, aes(x=a)) + geom_histogram() 
+bhist <- ggplot(junkdatacombo, aes(x=b)) + geom_histogram() 
+
+
+aden <- ggplot(junkdatacombo, aes(x = a)) + geom_density() 
+bden <- ggplot(junkdatacombo, aes(x = b)) + geom_density() 
+
+
+# Boxplots for predictors , class wise
+
+abox <- ggplot(junkdatacombo, aes(factor(class), a,colour=factor(class))) + geom_boxplot() +ggtitle("a vs class\n")
+
+bbox <- ggplot(junkdatacombo, aes(factor(class), b,colour=factor(class))) + geom_boxplot() +ggtitle("b vs class\n")
+
+
+grid.arrange(ahist,bhist,aden,bden,ncol=2,nrow=2)
+
+par(mfrow=c(1,2))
+abox
+bbox
+
+
+```
+
+\newpage 
+
+
+### Conclusions
+
+
+The stand alone data from each file shows that junk1 data is much balanced while we see the class distribution in junk2 data more inclined towards class 0 .
+The class 0 and class 1 distribution shows outliers , class 1 outliers are more out of the range.
+
+The distributions for a and b are more or less normal . Although bimodal the distributions for a as well as b are not skewed.
+
+Overall although imbalanced , the data can be very well valid , however, for understanding the impact of the predictors of a and b on the class classification, one would need to have more data and/or confirmation about the validity of this data.
+
+Hence while the team has either the option of proceeding with the current information or as for more, it would be prudent to understand more about the requirement for the analytics and proceed.
+A quick client discussion id certainly advisable.
+
+\newpage 
+
