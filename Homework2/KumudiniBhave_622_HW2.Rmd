@@ -1,0 +1,562 @@
+---
+title: "KumudiniBhave_622_HW2"
+author: "Kumudini Bhave"
+date: "May 10, 2020"
+output:
+  html_document:
+    fontsize: 35pt
+    highlight: pygments
+    theme: cerulean
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+---
+
+     
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+*******
+
+# **Machine Learning  : Classification With Various Models**
+
+********
+
+## Summary
+
+
+
+This is an R Markdown document for performing Classification of the provided color data. We have used different statistical learning solutions for making models and compare dthe accuracy of the same.
+
+
+
+
+```{r warning=FALSE, comment=FALSE, message=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=150)}
+knitr::opts_chunk$set(message = FALSE, echo=TRUE)
+     
+# Library for loading CSV data
+library(RCurl)
+# Library for data tidying
+# Library for data structure operations 
+library(dplyr)
+library(knitr)
+# Library for plotting
+library(ggplot2)
+# Library for data display in tabular format
+#library(DT)
+library(pander)
+library(Amelia)
+library(gridExtra)
+library(car)
+library(caret)
+library(pROC)
+library(ROCR)
+library(naivebayes)
+library(rpart)
+library(rpart.plot)
+library(MASS)
+library(e1071)
+library(class)
+
+suppressWarnings(suppressMessages(library(recommenderlab)))
+
+
+```
+
+
+
+## Data Loading & Preparation
+
+
+```{r  warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80),echo=TRUE}
+
+# Getting data 
+
+colordata.giturl <- "https://raw.githubusercontent.com/DataDriven-MSDA/DATA622_ML/master/Homework2/HW2_Data.csv"
+
+colordata <- read.csv(url(colordata.giturl))
+head(colordata, 10)
+summary(colordata)
+
+
+```
+We find that the csv imported has leading / trailing whitespace.
+We remove this and then factor the discrete variables predictor Y and response label 
+```{r  warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80),echo=TRUE}
+
+
+colordata$Y <- trimws(colordata$Y, which = c("both"))
+colordata$label <- trimws(colordata$label, which = c("both"))
+
+
+colordata$Y <- as.factor(colordata$Y)
+colordata$label <- as.factor(colordata$label)
+summary(colordata)
+
+
+nrow(colordata)
+ncol(colordata)
+
+
+
+```
+
+\newpage 
+
+
+## Data Exploration
+
+We find three columns in this data file, 2 of these viz., X  and Y  are the predictor variables.While label is discrete response variable. Both are discrete.
+
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+
+colordata$Y <- as.factor(colordata$Y)
+colordata$label <- as.factor(colordata$label)
+
+
+pander(table(colordata$label), caption = "Response Variable : label")
+pander(table(colordata$label)/sum(table(colordata$label)), caption = "Frequency Table : label")
+
+pander(summary(colordata))
+
+```
+
+
+Checking for missing data we fine that we have 100% complete cases.
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=150)}
+
+missmap(colordata, legend = TRUE, main = "Missing Values vs Observed", col =  c("red", "black"))
+
+```
+
+
+
+
+
+##  Plots For Predictors
+
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=150)}
+
+
+# Predictor Y boxplots
+xbox <- ggplot(colordata, aes(factor(X), X,colour=factor(label))) + geom_boxplot() + ggtitle("BoxPlot : X vs label\n")
+
+ybox <- ggplot(colordata, aes(factor(Y), Y,colour=factor(label))) + geom_boxplot() + ggtitle("BoxPlot : Y vs label\n")
+
+xmos <- mosaicplot(~label + factor(X), data=colordata ,main = "Mosaic Plot : X Vs label")
+ymos <- mosaicplot(~label + factor(Y), data=colordata ,main = "Mosaic Plot : Y Vs label")
+
+
+par(mfrow=c(2,1))
+xbox
+ybox
+
+
+
+```
+We see that we have six types of observations for X and six types of Y and a combination of these form the observations 
+
+From the plots we observe that X values have equally distributed labels except for value X=55, Y values on the contrary are evenly distributed across both the color classes of label Black and Blue.
+
+We dont see any outliers.
+
+From the mosaic plots we see that c value of Y has less of Black and more of Blue
+Similarly e of Y has less of Blue
+
+
+
+***********
+\newpage
+
+
+## Model Making
+
+Lets try to make few models by running different statistical learning methods on this data. 
+
+We need to form train and test data sets for this.
+
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=150)}
+
+set.seed(100)
+randomobs <- sample(seq_len(nrow(colordata)), size = floor(0.7 * nrow(colordata)))
+
+traincolordata <- colordata[randomobs,]
+testcolordata <- colordata[-randomobs,]
+
+
+```
+
+### Helper Function For Performance Metrics 
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=150)}
+
+
+perfmetric <- function(confmattab) {
+  confmat <- as.matrix(confmattab)
+print(confmat)
+
+TP <- confmat[2,2]
+TN <- confmat[1,1]
+FP <- confmat[1,2]
+FN <- confmat[2,1]
+
+Sensitivity <- (TP )  / (TP + FN)
+Specificity <- (TN )  / (FP + TN)
+
+ErrorRate <- (FP + FN )  / (TP + FP + FN + TN)
+Accuracy <- (TP + TN )  / (TP + FP + FN + TN)
+
+FPR <- 1 - Specificity
+
+
+perfvec <- c(Sensitivity, FPR, Specificity, ErrorRate, Accuracy)
+return(perfvec)
+}
+
+
+
+
+```
+
+### Model : Logistic Regression
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=150)}
+
+traincolor.logistic <- traincolordata
+
+model.logistic <- glm(label ~ . , family=binomial(link="logit"), data = traincolor.logistic)
+
+summary(model.logistic)
+
+model.logistic.probtest <- predict(model.logistic, newdata = testcolordata, type="response")
+model.logistic.predtest <- ifelse(model.logistic.probtest > 0.5, "BLUE" ,"BLACK")
+
+# Confusion Matrix For Model Logistic
+     
+
+model.logistic.cfmat <- table(Predicted = model.logistic.predtest, Actual = testcolordata$label)
+
+
+metric.logistic <- perfmetric(model.logistic.cfmat)
+
+```
+
+
+
+**Plotting the ROC curve for Model MODEL.LOGISTIC**
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+model.logistic.roc <- roc(label ~ model.logistic.probtest, data = testcolordata)
+model.logistic.auc <- round(auc(model.logistic.roc), 6)
+
+par(mfrow=c(1,2))
+
+pander(ftable(model.logistic.cfmat))
+
+plot(model.logistic.roc, legacy_axes =TRUE, col="blue", main = paste0("Model Logistic ROC","\n","AUC : ", model.logistic.auc))
+
+
+metricmodel <- data.frame(metric.logistic[])
+rownames(metricmodel)<-c('Sensitivity', 'FPR', 'Specificity','ErrorRate','Accuracy')
+colnames(metricmodel)<-c('Logistic')
+
+
+```
+
+
+
+
+### Model : Naive Bayes
+
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=150)}
+
+traincolor.nb <- traincolordata
+
+model.nb <- naiveBayes(label~., data = traincolor.nb, prob = TRUE)
+
+summary(model.nb)
+
+model.nb.probtest<- predict(model.nb, newdata = testcolordata, type="raw")
+model.nb.probtest <- as.data.frame(model.nb.probtest)$BLUE
+
+model.nb.predtest <- ifelse(model.nb.probtest > 0.5, "BLUE" ,"BLACK")
+
+
+# Confusion Matrix For Model NB
+     
+
+model.nb.cfmat <- table(Predicted = model.nb.predtest, Actual = testcolordata$label)
+
+metric.nb <- perfmetric(model.nb.cfmat)
+
+
+```
+
+
+**Plotting the ROC curve for Model MODEL.NB**
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+model.nb.roc <- roc(label ~ model.nb.probtest, data = testcolordata)
+model.nb.auc <- round(auc(model.nb.roc), 6)
+
+par(mfrow=c(1,2))
+
+pander(ftable(model.nb.cfmat))
+
+plot(model.nb.roc, legacy_axes =TRUE, col="blue", main = paste0("Model Naive Bayes ROC","\n","AUC : ", model.nb.auc))
+
+metricmodel<-cbind(metricmodel,metric.nb[])
+
+```
+
+
+### Model : LDA 
+
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=150)}
+traincolor.lda <- traincolordata
+
+model.lda <- lda( label~.,data = traincolor.lda)
+
+
+summary(model.lda)
+
+model.lda.probtest<- predict(model.lda, newdata = testcolordata)
+model.lda.predtest <- model.lda.probtest$class
+
+lda.post.prob <- as.data.frame(model.lda.probtest$posterior)$BLUE
+
+
+# Confusion Matrix For Model LDA
+
+model.lda.cfmat <- table(Predicted = model.lda.predtest, Actual = testcolordata$label)
+
+metric.lda <- perfmetric(model.lda.cfmat)
+
+```
+
+
+**Plotting the ROC curve for Model MODEL.LDA**
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+model.lda.roc <- roc(label ~ lda.post.prob, data = testcolordata)
+model.lda.auc <- round(auc(model.lda.roc), 6)
+
+
+par(mfrow=c(1,2))
+
+pander(ftable(model.lda.cfmat))
+
+plot(model.lda.roc, legacy_axes =TRUE, col="blue", main = paste0("Model LDA  ROC","\n","AUC : ", model.lda.auc))
+
+
+metricmodel<-cbind(metricmodel,metric.lda[])
+
+```
+
+### Model : SVM With Radial Kernel
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+traincolor.svm <- traincolordata
+
+model.svmr <- svm(label ~ ., traincolor.svm, cost = 20,  cross=10,  type="C-classification",kernel="radial")
+
+summary(model.svmr)
+
+model.svmr.predtest <- predict(model.svmr, newdata = testcolordata)
+
+# Confusion Matrix For Model SVM
+
+model.svmr.cfmat <- table(Predicted = model.svmr.predtest, Actual = testcolordata$label)
+
+metric.svmr <- perfmetric(model.svmr.cfmat)
+
+
+```
+
+
+**Plotting the ROC curve for Model MODEL.SVM Radial Kernel**
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+
+model.svmr.roc <- roc(response = testcolordata$label, predictor = as.numeric(model.svmr.predtest))
+model.svmr.auc <- round(auc(model.svmr.roc), 6)
+par(mfrow=c(1,2))
+pander(ftable(model.svmr.cfmat))
+plot(model.svmr.roc, legacy_axes =TRUE, col="blue", main = paste0("Model SVM  ROC","\n","AUC : ", model.svmr.auc))
+
+
+metricmodel<-cbind(metricmodel,metric.svmr[])
+
+
+
+
+```
+
+
+
+
+### Model : Decision Tree
+
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+traincolor.tree <- traincolordata
+
+model.tree <- rpart( label ~ ., traincolor.tree, method = "class")
+
+rpart.plot(model.tree)
+
+
+
+summary(model.tree)
+
+model.tree.probtest <- predict(model.tree, newdata = testcolordata, type="prob")
+model.tree.probtest <- as.data.frame(model.tree.probtest)$BLUE
+
+model.tree.predtest <- ifelse(model.tree.probtest > 0.5, "BLUE", "BLACK")
+
+
+# Confusion Matrix For Model Tree
+
+model.tree.cfmat <- table(Predicted = model.tree.predtest, Actual = testcolordata$label)
+
+metric.tree <- perfmetric(model.tree.cfmat)
+
+
+```
+
+
+**Plotting the ROC curve for Model MODEL.TREE**
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+model.tree.roc <- roc(label ~ model.tree.probtest, data = testcolordata)
+model.tree.auc <- round(auc(model.tree.roc), 6) 
+
+
+par(mfrow=c(1,2))
+
+pander(ftable(model.tree.cfmat))
+
+plot(model.tree.roc, legacy_axes =TRUE, col="blue", main = paste0("Model Tree  ROC","\n","AUC : ", model.tree.auc))
+
+
+metricmodel<-cbind(metricmodel,metric.tree[])
+
+```
+
+
+### Model : kNN
+
+
+As with kNN the eucledian distance is measured, the features neeed to be numeric . Hence we convert the Y predictors into numeric
+
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+traincolor.knn <- traincolordata
+testcolor.knn <- testcolordata
+
+traincolor.knn$Y <- apply(as.data.frame(traincolor.knn$Y),1,utf8ToInt)
+testcolor.knn$Y <- apply(as.data.frame(testcolor.knn$Y),1,utf8ToInt)
+
+
+model.knn <- knn(traincolor.knn[,1:2],  testcolor.knn[,1:2], cl = traincolor.knn$label, k= 10, prob = TRUE )
+
+summary(model.knn)
+
+model.knn.probtest <- attr(model.knn, "prob")
+model.knn.predtest <- ifelse(model.knn == "BLUE", model.knn.probtest, 1 - model.knn.probtest)
+
+
+# Confusion Matrix For Model kNN
+     
+
+model.knn.cfmat <- table(Predicted = model.knn, Actual = testcolor.knn$label)
+
+metric.knn <- perfmetric(model.knn.cfmat)
+
+```
+
+
+
+**Plotting the ROC curve for Model MODEL.TREE**
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+model.knn.roc <- roc(label ~ model.knn.probtest, data = testcolor.knn)
+model.knn.auc <- round(auc(model.knn.roc), 6) 
+
+
+par(mfrow=c(1,2))
+
+pander(ftable(model.knn.cfmat))
+
+plot(model.knn.roc, legacy_axes =TRUE, col="blue", main = paste0("Model KNN  ROC","\n","AUC : ", model.knn.auc))
+
+metricmodel<-cbind(metricmodel,metric.knn[])
+
+
+```
+
+### Model Metrics
+
+
+```{r tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+metricmodel<-rbind(metricmodel, c(model.logistic.auc,model.nb.auc,model.lda.auc,model.svmr.auc,model.tree.auc,model.knn.auc))
+
+rownames(metricmodel) <- c("Sensitivity" , "FPR" , "Specificity", "ErrorRate" ,  "Accuracy" , "AUC")
+colnames(metricmodel) <- c('Logistic','NB','LDA','SVM_Radial','Tree','knn')
+
+pander(metricmodel, caption = "Models Performance Metrics : BLUE Positive")
+
+
+
+```
+\newpage
+
+**********
+
+
+### Conclusions
+
+We experimented with different statistical learning models on the color data, The findings show that Logistic, NB, LDA perform more or less similar.
+They have similar Accuracy, Sensitivity, FPR. The AUC for NaiveBayes is slightly more.
+However although the accuracy is at ~ 70 %, the true positive rate  ie Sensitivity is only about 66% for these thrwe.
+NB shows slightly more AUC compared to Logistic and  LDA
+The Tree models display the poorest performance. It has the lowest Sensitivity or True Positive RateT 50%
+The SVM with Radial Kernel seems to do well than the Logistic , NaiveBayes and LDA and has the highest Accuracy , but looking closely we se that the True Positive rate is  at 75%
+The Knn seems to be doing the best here with True positive rate as almost 100% although Accuracy is at par with others.
+
+However we keep in mind that the data at hand was very limited and the samples derived were less . More data could help with better models.
+
+
+
+
+
+
+
+
+
+\newpage
+
+***********
