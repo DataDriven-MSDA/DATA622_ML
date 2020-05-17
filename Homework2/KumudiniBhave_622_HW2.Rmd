@@ -537,7 +537,7 @@ pander(metricmodel, caption = "Models Performance Metrics : BLUE Positive")
 **********
 
 
-### Conclusions
+### Conclusions And Classifier performance
 
 We experimented with different statistical learning models on the color data, The findings show that Logistic, NB, LDA perform more or less similar.
 They have similar Accuracy, Sensitivity, FPR. The AUC for NaiveBayes is slightly more.
@@ -545,13 +545,16 @@ However although the accuracy is at ~ 70 %, the true positive rate  ie Sensitivi
 NB shows slightly more AUC compared to Logistic and  LDA
 The Tree models display the poorest performance. It has the lowest Sensitivity or True Positive RateT 50%
 The SVM with Radial Kernel seems to do well than the Logistic , NaiveBayes and LDA and has the highest Accuracy , but looking closely we se that the True Positive rate is  at 75%
-The Knn seems to be doing the best here with True positive rate as almost 100% although Accuracy is at par with others.
+The Knn seems to be doing the best here with True positive rate as almost 100% although Accuracy is at par with others. KNN  works simpl and is parsim
 
 However we keep in mind that the data at hand was very limited and the samples derived were less . More data could help with better models.
 
+K-NN does better because of its inherent nature to optimize locally. So although it is simple in its approach where it simply sees the data point that is closer to the one of known class. It goes by measure of distance but very powerfully by local approximation.
 
+SVM performs well for higher dimensions lesser training data and hence we may see the better accuracy here , with good TPR rates.
 
-
+Logistic Regression doesnot do that well for non linear solutions a, however we dont see a very bad performance here , may be due to the less data. Similarly Naive Bayes is more of linear classifier which assumes conditional independance
+Decision Trees usuallly are better at accuracy compared to linear solutions like Logistic and better at handling collinearity
 
 
 
