@@ -8,6 +8,7 @@ output:
     highlight: pygments
     theme: cerulean
     toc: yes
+    toc_float: yes
   pdf_document:
     number_sections: yes
     toc: yes
@@ -20,9 +21,6 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ````
-
-
-
 
 *******
 

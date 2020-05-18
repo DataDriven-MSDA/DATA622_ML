@@ -1,13 +1,14 @@
 ---
 title: "KumudiniBhave_622_HW1Q3"
 author: "Kumudini Bhave"
-date: "May 5, 2020"
+date: "May 1, 2020"
 output:
   html_document:
     fontsize: 35pt
     highlight: pygments
     theme: cerulean
     toc: yes
+    toc_float: yes
   pdf_document:
     number_sections: yes
     toc: yes
@@ -286,4 +287,4 @@ However , other models apart from kNN could be derived and compared to assert th
 
 \newpage 
 
-
+***********
