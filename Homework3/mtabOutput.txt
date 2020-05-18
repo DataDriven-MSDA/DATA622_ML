@@ -1,0 +1,84 @@
+[[1]]
+                       
+bag_class_probabilities acc good unacc vgood
+                  acc   118    1     3     2
+                  good    2   21     1     1
+                  unacc   1    0   348     0
+                  vgood   0    1     0    19
+
+[[2]]
+         GBM first boosting model           depth 4
+gbm_predicted_class acc good unacc vgood
+              acc     9    0     0     0
+              unacc 112   23   351     4
+              vgood   0    0     1    18
+
+[[3]] GBM model 2 increased depth 5
+       
+        unacc acc vgood good
+  unacc   351 113     4   23
+  acc       0   8     0    0
+  vgood     1   0    18    0
+  good      0   0     0    0
+
+[[4]]
+                    
+gbm_predicted_class3 acc good unacc vgood
+               acc    15    0     0     1
+               unacc 106   23   352     0
+               vgood   0    0     0    21
+
+[[5]]
+ LDA      
+        acc good unacc vgood
+  acc   107   12    25     9
+  good    5    9     0     0
+  unacc   9    0   327     0
+  vgood   0    2     0    13
+
+[[6]]
+       
+rf_pred acc good unacc vgood
+  acc   119    3     7     5
+  good    0   17     0     0
+  unacc   2    0   345     0
+  vgood   0    3     0    17
+
+[[7]]
+       Decision Tree                  
+rpart_class_probabilities acc good unacc vgood
+                    acc   106    0    14     5
+                    good   10   20     1     0
+                    unacc   4    0   337     0
+                    vgood   1    3     0    17
+
+[[8]]
+Logistic         
+vglm_pred acc good unacc vgood
+    acc   106    4    15     0
+    good    3   17     0     0
+    unacc  10    0   337     0
+    vgood   2    2     0    22
+
+[[9]]
+        
+xgb_pred acc good unacc vgood
+       1 121   23    71    22
+       3   0    0   281     0
+
+[[10]]`
+         
+xgb_pred4 acc good unacc vgood
+    acc   100    6    24    12
+    good    3   11     1     0
+    unacc  18    3   327     0
+    vgood   0    3     0    10
+
+[[11]]
+         
+xgb_pred5 acc good unacc vgood
+    acc   109    0     8     6
+    good    4   17     1     0
+    unacc   7    3   343     0
+    vgood   1    3     0    16
+

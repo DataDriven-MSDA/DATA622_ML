@@ -1,0 +1,114 @@
+---
+title: "KumudiniBhave_622_HW3"
+author: "Kumudini Bhave"
+date: "May 12, 2020"
+output:
+  html_document:
+    fontsize: 35pt
+    highlight: pygments
+    theme: cerulean
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+*******
+
+# **Machine Learning  : Classification Of Car Data**
+
+********
+
+## Summary
+
+
+
+This is an R Markdown document for performing Classification of the provided car data. Here we examine Ruffios work of analyzing car data set with  different statistical learning solutions for making models and compare dthe accuracy of the same.
+
+
+## About car data
+
+The car data which Ruffios has studies is having a training set with 1210 observations and a test data set with 518 observations.
+
+The response variable V7 has four values / classes.
+viz. acc,unacc, good, vgood which have 263, 858 , 46 , 43  observations respectively
+
+This shows that the good and vgood have very few observations that are in classs good or  vgood , so it is about 3 -  4% of observations.
+
+
+this shows that the response variable is slightly imbalanced.
+
+
+Ruffio could be requested to follow few balancing techniques such as 
+
+1. Resampling techniques for balancing data in which training data could be resampled so as to increase the frequency of minority class
+
+2. Ensemble techniques
+
+
+## Models
+
+The following models were tried and studied by Ruffio
+Logistic Regression
+LDA
+Decision Tree
+Bagging(Ensemble) 
+Boosting model
+Random Forest
+XGBoost
+
+Ruffio has started off well with the multinomial logistic regression as the response has four classes viz acc, unacc, good and vgood
+However it also depends on the business aspect as to which class of response and / or  accuracy is of more importance.
+
+While the vgood minority class shows high sensitivity of 1 and FPR of almost zero , Logistic Regression is not so much suitable for such kind of data and  doesnt give great metrics for all classes  as we see the good is missclasses the 'good' classwith about 6 wrongly classified and 17 correctly classified with sensitivity only 0.73 . For unacc and acc it s 0.95 and 0.87 respectively. 
+
+The LDA works works on probabilities and with dimension reduction  affecting accuracy. The LDA shows the 'vgood' class with 9 data point misclassified and for 'good' its 14 misclassified which is about 60% misclassified.
+
+Surprisingly we find the multinomial outperforms the LDA in this case.
+
+Decision Tree like Logistic are biased towards the class of majority
+We can see the confusion matrix display acc and unacc more proficiently while the good and vgood still have about 3 and 5 respetively misclassified.
+The accray here is again about ~92% similar to that of Logistic which is about ~93%
+With Decision Tree we see that the sensitivity for acc and unacc classes is a tad ok but for vgood class is less.
+The bias towards the majority class is depicted here in the metrics.
+
+Single hypothesis algorithm dont seem to be performing very well.
+
+
+Ruffio has performed other ensemble algorithms like bagging and boosting.
+With bagging, we observe that the accuracy improves considerably to 0.973  which is a bootstrap aggregation method.. 
+Also the all the classes show good improvement.with good and vgood getting 0.91 and 0.95 respectively along with acc and unacc at 0.95 and 0.98 respectively. We see here that with resampling many maore times with replacement over the same training set, helps this boost in accuracy.
+
+
+Baggin gives 0.973 accuracy while boostng  gives a closer but lesser accuracy of 0.96 
+Even among the XGboost with level 4  and level 5 the accuracy increases from 0.86 to 0.93 however with increased depth the accuracy drops beyond a point. Also with all this added complexity , the XG boost does not justify it with that accuracy.
+The random forst shows an accuracy of 0.961 , however there is mis classification of minority classes of good and vgood 
+
+
+## Ruffios Effort
+
+Ruffio has performed a thourough analysis of the data set by running different statistical methods, simple ones as well as ensemble  , tuned the parameters and noted the confusion matrices of each of the models and compared the accuracy and other performance metrics like the Sensitivity specificity etc.
+He could better his appraoch by doing a balancing techniques for data. 
+Overall his effort is laudable and his choice of classifieras has been apt.
+He has certainly done well in his work.
+
+
+So overall from Ruffios work it shows that bagging method has provided the best accuracy .
+
+
+## Conclusion
+
+So overall we observe that simple aggregation of results obtained over multiple resampling process for the same model , gives us a better accuracy over classification for all classes. 
+While single  hypotheses statistical methods do not perform better than the ensembles, the added complexity of  ensemble methods need to be examined and accounted for , justified by the accuracy it attains. Else parsimonious is the way to go. 
+
+
+**************
